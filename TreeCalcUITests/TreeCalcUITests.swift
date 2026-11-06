@@ -59,4 +59,43 @@ final class TreeCalcUITests: XCTestCase {
         }
         XCTAssertTrue(app.descendants(matching: .any)["about.author"].waitForExistence(timeout: 3))
     }
+
+    func testBaseErrorAndExpressionTree() {
+        let app = XCUIApplication()
+        app.launch()
+        app.buttons["key.digit8"].tap()
+        app.buttons["key.memoryAdd"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["display.memory"].waitForExistence(timeout: 3))
+        app.buttons["key.clear"].tap()
+        app.buttons["key.digit1"].tap()
+        app.buttons["key.digit0"].tap()
+        app.buttons["base.16"].tap()
+        let display = app.descendants(matching: .any)["display.result"]
+        XCTAssertTrue(display.waitForExistence(timeout: 5))
+        XCTAssertTrue(display.label.contains("A"))
+        app.buttons["key.clear"].tap()
+        app.buttons["base.10"].tap()
+        app.buttons["key.digit9"].tap()
+        app.buttons["key.add"].tap()
+        app.buttons["key.digit7"].tap()
+        app.buttons["key.mul"].tap()
+        app.buttons["key.digit6"].tap()
+        app.buttons["key.equals"].tap()
+        XCTAssertTrue(display.label.contains("51"))
+        let start = display.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5))
+        let end = display.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        XCTAssertTrue(app.buttons["tree.playback"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["postfix.0"].waitForExistence(timeout: 3))
+        app.buttons["tree.back"].tap()
+        XCTAssertTrue(app.buttons["key.equals"].waitForExistence(timeout: 3))
+        app.buttons["key.clear"].tap()
+        app.buttons["key.digit1"].tap()
+        app.buttons["key.div"].tap()
+        app.buttons["key.digit0"].tap()
+        app.buttons["key.equals"].tap()
+        let error = app.descendants(matching: .any)["display.error"]
+        XCTAssertTrue(error.waitForExistence(timeout: 3))
+        XCTAssertTrue(error.label.contains("Division by zero") || error.label.contains("Nullával osztás"))
+    }
 }

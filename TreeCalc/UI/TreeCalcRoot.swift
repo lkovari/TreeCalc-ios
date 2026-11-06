@@ -92,6 +92,10 @@ struct TreeCalcRoot: View {
     }
 }
 
+func shouldSwitchTree(width: CGFloat, height: CGFloat) -> Bool {
+    abs(width) > 48 && abs(width) > abs(height) * 1.4
+}
+
 struct PhoneSwipe: ViewModifier {
     var enabled: Bool
     @Binding var showTree: Bool
@@ -100,9 +104,7 @@ struct PhoneSwipe: ViewModifier {
         if enabled {
             content.gesture(
                 DragGesture(minimumDistance: 48).onEnded { value in
-                    let width = value.translation.width
-                    let height = value.translation.height
-                    if abs(width) > 48 && abs(width) > abs(height) * 1.4 {
+                    if shouldSwitchTree(width: value.translation.width, height: value.translation.height) {
                         showTree.toggle()
                     }
                 }

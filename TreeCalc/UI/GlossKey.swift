@@ -25,6 +25,10 @@ struct GlossKey: View {
     }
 }
 
+func keyGradientEndDepth(dark: Bool) -> Double {
+    dark ? 0.78 : 0.25
+}
+
 struct GlossButtonStyle: ButtonStyle {
     var visual: KeyVisual
     var selected: Bool
@@ -69,7 +73,7 @@ struct GlossButtonStyle: ButtonStyle {
     }
 
     private var endDepth: Double {
-        scheme == .dark ? 0.78 : 0.25
+        keyGradientEndDepth(dark: scheme == .dark)
     }
 }
 

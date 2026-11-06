@@ -780,7 +780,7 @@ final class EngineTests: XCTestCase {
     }
 }
 
-private func pressAll(_ engine: CalculatorEngine, _ expression: String) {
+func pressAll(_ engine: CalculatorEngine, _ expression: String) {
     for character in expression {
         switch character {
         case "0": engine.press(.digit0)
@@ -812,7 +812,7 @@ private func pressAll(_ engine: CalculatorEngine, _ expression: String) {
     }
 }
 
-private func tokenText(_ token: Token) -> String {
+func tokenText(_ token: Token) -> String {
     switch token {
     case .numberLiteral(let raw): raw
     case .operatorToken(let kind): kind.displaySymbol
@@ -821,7 +821,7 @@ private func tokenText(_ token: Token) -> String {
     }
 }
 
-private func assertKind(_ kind: ErrorKind, _ body: () throws -> Void, file: StaticString = #filePath, line: UInt = #line) {
+func assertKind(_ kind: ErrorKind, _ body: () throws -> Void, file: StaticString = #filePath, line: UInt = #line) {
     do {
         try body()
         XCTFail("expected \(kind)", file: file, line: line)

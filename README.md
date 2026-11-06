@@ -12,9 +12,70 @@ Open `TreeCalc.xcodeproj` in Xcode 16 or later and run the `TreeCalc` scheme. Th
 xcodebuild -project TreeCalc.xcodeproj -scheme TreeCalc -destination 'platform=iOS Simulator,name=iPhone 17' test
 ```
 
-`TreeCalcTests` covers the engine cases plus `1/8`, `1/6`, `1/7`, and one postfix playback step. `TreeCalcUITests` checks `2+2=4`, opening a Help topic, and the original iOS link on About.
+That command builds the app and runs every test. To run only the tests, see [Tests](#tests).
 
 Bundle id: `com.lkovari.mobile.apps.treecalc`. Marketing version `1.0.0`, build `1`.
+
+## Tests
+
+From `TreeCalc-ios`, this runs the unit tests and the UI tests and does not launch a separate scheme:
+
+```
+xcodebuild -project TreeCalc.xcodeproj -scheme TreeCalc -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TreeCalcTests -only-testing:TreeCalcUITests test
+```
+
+Unit tests only:
+
+```
+xcodebuild -project TreeCalc.xcodeproj -scheme TreeCalc -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TreeCalcTests test
+```
+
+UI tests only:
+
+```
+xcodebuild -project TreeCalc.xcodeproj -scheme TreeCalc -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TreeCalcUITests test
+```
+
+The destination is the iPhone 17 simulator. There are 26 test methods: 24 in `TreeCalcTests` and 2 in `TreeCalcUITests`.
+
+### EngineTests
+
+The original calculator paths.
+
+- `testMixedPrecedence` — `9+7×6` is 51, the root is addition, and the postfix order is `9, 7, 6, ×, +`.
+- `testParenthesesPowerAndBases` — parentheses change the grouping, `2^3^2` is 512, and the same addition is `F`, `1011`, and `10` in hexadecimal, binary, and octal.
+- `testLogicUnaryAndErrors` — xor, sign, pressing `=` again, replacing the result with a digit, division by zero, both parenthesis failures, and a later failure drops the previous tree.
+- `testFunctionsMemoryAndDigits` — square root, reciprocal, square, memory add, recall, and clear, a left shift, and which digit keys each base enables.
+- `testSampleAndNested` — `Tst` types the sample in decimal without evaluating, a base change does not rewrite that text, `=` builds the tree, and the nested `777` expression keeps its postfix and value.
+- `testEditingMemoryAngleAndDomain` — empty `=`, memory surviving clear, backspace, a second dot, a leading dot, a leading operator, operator replacement, π, sign after `=`, a unary on the result, a missing operand, memory subtract, rewriting a finished result, keys rejected outside decimal, sine, cosine, log, bitwise not/and/or, and the domain, factorial, and bitwise errors.
+- `testMathFixes` — a minus after an operator is unary, negate applies to a parenthesized group, unary minus binds looser than power, sine of 90° and of π/2, `0.1+0.2` is `0.3`, and `0/0` is undefined while `5/0` is division by zero.
+- `testRepeatingDecimals` — `1/3`, `1/6`, `1/7`, `1/8`, and `1/12`, the classifier, one half in hexadecimal and binary, one tenth in hexadecimal, parsing those literals, rewriting a number that is still being typed, and continuing `1/3 + 1` from the exact fraction.
+- `testInfixPostfixAndTree` — converter precedence, right-associative power, empty input, rejected parentheses, tree shape, labels, evaluation, post-order paths for distinct and repeated operands, and builder failures.
+- `testOperationsAndFormatting` — each arithmetic, bitwise, and scientific operation, their domain failures, parsing, 12-digit rounding, integer and fraction formatting in every base, and the digit check.
+- `testPlaybackSteps` — Play advances once per tick, the last step stops, a second tap stops a running playback, and Reduce Motion steps without starting the timer.
+
+### EdgeCaseTests
+
+Boundaries that the main paths do not pin down.
+
+- `testExactFractionResults` — cancelling `1/3×3`, adding sixths, `0.1×10`, nested division, a 13-digit integer sum, reciprocal, square, and cube of a fraction, a chained root, and `3²!`.
+- `testAssociativityAndPrecedence` — subtraction and division associate left, power associates right, modulo shares the multiplication level, factorial and shift bind tighter than addition, and postfix `not` binds tighter than `and`. `(1+2) lsh 3` is 24; without parentheses `1+2 lsh 3` is 17.
+- `testPowerRootAndScientificBoundaries` — `0^0` and `5^0` are 1, a half power leaves the exact fraction, exponents 16 and −12 stay exact, 17 and −13 do not, `0^−1` and a negative square root are domain errors, and tangent of 90° stays a finite value because π/2 is not exact. Also sine, cosine, tangent, ln, log, exp, factorial of 0, 1, and 10, a negative factorial, negative cube, square, and reciprocal, plus factorial 170 and 171 and an overflowing exp.
+- `testRepeatingLengthsAndOtherBases` — short periods `1/11`, `2/7`, `5/6`, and `−1/3`, the 16-digit period of `1/17` falling back to 12 digits, terminating expansions, and `1/3` shown as `0.(01)`, `0.(25)`, and `0.(5)` in bases 2, 8, and 16.
+- `testFractionAndClassifierEdges` — a zero or `Int64.min` denominator, sign normalization, overflow, divide by zero, the `^0` and too-large exponent rules, rejected literals, `10.`, `.(3)`, a preperiod such as `0.1(6)` and `0.08(3)`, place values `0.4` octal, `0.1` binary, and `0.8` hexadecimal, terminating lengths, a period capped by `maxPeriod`, and a denominator of zero leaving the classifier.
+- `testBaseSwitchAndDisabledKeys` — octal, binary, and hexadecimal fractions return to decimal 0.5, every number already in the expression is rewritten, a trailing dot and a minus sign survive, π stays π, the same base keeps an error and another base clears it, a disabled digit or scientific key does nothing, the full digit and scientific key matrix, `FF+1` is `100`, and binary `11111111` is decimal 255.
+- `testMemoryExactnessAndRecall` — `1/3` minus `1/6` stays the exact `0.1(6)` and becomes hexadecimal `0.2(A)`, recall continues an open expression, `M+` stores the number being typed, `M+` on an empty calculator does not set memory, memory can go negative, `MC` keeps the display, an irrational sum leaves the fraction path, and `Tst` returns to decimal without clearing memory or the angle mode.
+- `testEditingIncompleteAndErrors` — backspace walks back through an operator into the previous number and through π, a lone sign deletes, a dot after a sign is `−0.`, `--5` is 5, `5--3` is 8, `()`, `2(3+1)`, and a trailing operator are malformed, leading zeros collapse, a second `=` repeats a division-by-zero error, and a digit typed after that error is appended to the old expression.
+- `testAngleShiftAndBitwiseEdges` — changing Deg/Rad does not recompute the result already on screen, cosine of π and tangent of π/4, shifts of 0, 31, 32, and −1, a negative value shifted left, fractional and negative modulo, `0 mod 0`, bitwise rejection of `1.5` and `1.2`, and `not` of −1.
+- `testEvaluatorDisplayAndOperatorContract` — NaN and infinity formatting, trimmed and repeating literals, the 1e−9 whole-number tolerance, a failing root label with no value, a parenthesis left in postfix, sine and `2^17` leaving no exact fraction, division by zero on the tree, and the symbol, precedence, arity, and associativity of every operator.
+- `testPlaybackBoundaries` — Play with no tokens does nothing, a tick while stopped does nothing, Reduce Motion wraps to the first step, Stop keeps the current index, and selecting the selected token clears it.
+- `testPresentationRules` — result text size at 9, 10, 12, and 13 digits and at the 340 and 460 point widths, which keys use a dark label, the 25% and 78% gradient floors, the 48 point and 1.4 swipe rule, postfix numbers versus operator symbols, which tree row belongs to the highlighted branch, the base and angle captions, and the four About links.
+- `testModelThemeAndMessages` — `CalculatorModel` follows the engine for `2+2` and a base change, the theme is read back from `themeMode` and an unknown value falls back to Auto, and every error has its English and Hungarian sentence.
+
+### TreeCalcUITests
+
+- `testAdditionHelpAndAbout` — `2+2` shows 4, a Help topic opens, and About shows the original iOS link and the author.
+- `testBaseErrorAndExpressionTree` — `M+` shows the memory mark, decimal 10 becomes `A` in base 16, a horizontal drag opens the expression tree for `9+7×6`, Back returns to the keypad, and `1÷0` shows the division-by-zero message.
 
 ## Architecture
 

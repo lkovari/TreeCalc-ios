@@ -43,7 +43,7 @@ struct Fraction: Equatable {
             if body.contains("(") && body[body.index(after: open)...].contains("(") { return nil }
             period = String(body[body.index(after: open)..<close])
             main = String(body[..<open])
-            if period.isEmpty || !main.hasSuffix(".") { return nil }
+            if period.isEmpty || !main.contains(".") { return nil }
         } else if body.contains("(") || body.contains(")") {
             return nil
         }

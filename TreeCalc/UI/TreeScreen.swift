@@ -58,7 +58,7 @@ struct TreeScreen: View {
                     } else {
                         ForEach(Array(state.postfixTokens.enumerated()), id: \.offset) { index, token in
                             let selected = playback.index == index
-                            let number = postfixIsNumber(token)
+                            let number = postfixTokenIsNumber(token)
                             Button {
                                 playback.select(index)
                             } label: {
@@ -149,11 +149,6 @@ struct TreeScreen: View {
         }
     }
 
-    private func postfixIsNumber(_ token: String) -> Bool {
-        let symbols: Set<String> = ["+", "-", "−", "×", "÷", "^", "mod", "and", "or", "xor", "lsh", "not", "√", "1/", "sin", "cos", "tan", "ln", "log", "exp", "²", "³", "!"]
-        return !symbols.contains(token)
-    }
-
     private func postfixInk(number: Bool, selected: Bool) -> Color {
         if selected {
             return Color(hue: 0.02, saturation: 0.62, brightness: 0.18)
@@ -189,6 +184,16 @@ struct TreeScreen: View {
             collapsed.remove(prefix)
         }
     }
+}
+
+func postfixTokenIsNumber(_ token: String) -> Bool {
+    let symbols: Set<String> = ["+", "-", "−", "×", "÷", "^", "mod", "and", "or", "xor", "lsh", "not", "√", "1/", "sin", "cos", "tan", "ln", "log", "exp", "²", "³", "!"]
+    return !symbols.contains(token)
+}
+
+func treeRowInHighlightedSubtree(path: String, highlighted: String?) -> Bool {
+    guard let highlighted else { return false }
+    return path == highlighted || path.hasPrefix(highlighted + "/")
 }
 
 struct TreeNodeRow: View {
@@ -274,7 +279,6 @@ struct TreeNodeRow: View {
     }
 
     private var inSubtree: Bool {
-        guard let highlightedPath else { return false }
-        return path == highlightedPath || path.hasPrefix(highlightedPath + "/")
+        treeRowInHighlightedSubtree(path: path, highlighted: highlightedPath)
     }
 }
