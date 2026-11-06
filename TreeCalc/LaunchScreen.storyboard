@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="LaunchVC">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="LaunchScene">
+            <objects>
+                <viewController id="LaunchVC" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="LaunchRoot">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="TreeCalc" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TitleLabel">
+                                <rect key="frame" x="46" y="87" width="301" height="41"/>
+                                <fontDescription key="fontDescription" type="system" weight="bold" pointSize="34"/>
+                                <color key="textColor" red="0.88627450980392157" green="0.0" blue="0.45490196078431372" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="LaunchMark" translatesAutoresizingMaskIntoConstraints="NO" id="TreeImage">
+                                <rect key="frame" x="55" y="152" width="283" height="283"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="TreeImage" secondAttribute="height" multiplier="1:1" id="treeAspect"/>
+                                </constraints>
+                            </imageView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="safe"/>
+                        <color key="backgroundColor" name="LaunchBackground"/>
+                        <constraints>
+                            <constraint firstItem="TitleLabel" firstAttribute="top" secondItem="safe" secondAttribute="top" constant="28" id="titleTop"/>
+                            <constraint firstItem="TitleLabel" firstAttribute="centerX" secondItem="LaunchRoot" secondAttribute="centerX" id="titleCenter"/>
+                            <constraint firstItem="TitleLabel" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="safe" secondAttribute="leading" constant="16" id="titleLeading"/>
+                            <constraint firstItem="TreeImage" firstAttribute="top" secondItem="TitleLabel" secondAttribute="bottom" constant="28" id="treeTop"/>
+                            <constraint firstItem="TreeImage" firstAttribute="centerX" secondItem="LaunchRoot" secondAttribute="centerX" id="treeCenter"/>
+                            <constraint firstItem="TreeImage" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="safe" secondAttribute="leading" constant="36" id="treeLeading"/>
+                            <constraint firstItem="safe" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="TreeImage" secondAttribute="trailing" constant="36" id="treeTrailing"/>
+                            <constraint firstItem="TreeImage" firstAttribute="width" secondItem="LaunchRoot" secondAttribute="width" multiplier="0.72" priority="750" id="treeWidth"/>
+                            <constraint firstItem="TreeImage" firstAttribute="height" relation="lessThanOrEqual" secondItem="safe" secondAttribute="height" multiplier="0.62" id="treeHeight"/>
+                            <constraint firstItem="safe" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="TreeImage" secondAttribute="bottom" constant="24" id="treeBottom"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="LaunchFirst" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="0.0" y="0.0"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="LaunchMark" width="400" height="400"/>
+        <namedColor name="LaunchBackground">
+            <color red="0.8470000000000000" green="0.8860000000000000" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
+</document>
