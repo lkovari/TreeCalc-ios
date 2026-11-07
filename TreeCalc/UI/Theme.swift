@@ -2,7 +2,7 @@ import SwiftUI
 
 enum L10n {
     static var hungarian: Bool {
-        Locale.current.language.languageCode?.identifier == "hu"
+        Bundle.main.preferredLocalizations.first?.hasPrefix("hu") == true
     }
 
     static func text(_ en: String, _ hu: String) -> String {

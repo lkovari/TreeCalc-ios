@@ -2,7 +2,7 @@
 
 TreeCalc is a calculator that shows the expression tree behind the result. Version 1.0.0. Author: László Kővári.
 
-The keys, operator precedence, errors, integer bases, memory, angle mode, and the `Tst` sample follow the original calculator. This app adds a glossy keypad, repeating-decimal display, an iPad split layout, and postfix playback.
+The keys, operator precedence, errors, integer bases, memory, angle mode, and the `Tst` sample follow the original calculator. This app adds a glossy keypad, repeating-decimal display, and postfix playback. TreeCalc is an iPhone app; iPad is not a target.
 
 ## Build
 
@@ -36,7 +36,7 @@ UI tests only:
 xcodebuild -project TreeCalc.xcodeproj -scheme TreeCalc -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TreeCalcUITests test
 ```
 
-The destination is the iPhone 17 simulator. There are 26 test methods: 24 in `TreeCalcTests` and 2 in `TreeCalcUITests`.
+The destination is the iPhone 17 simulator. There are 31 test methods: 28 in `TreeCalcTests` and 3 in `TreeCalcUITests`.
 
 ### EngineTests
 
@@ -71,11 +71,16 @@ Boundaries that the main paths do not pin down.
 - `testPlaybackBoundaries` — Play with no tokens does nothing, a tick while stopped does nothing, Reduce Motion wraps to the first step, Stop keeps the current index, and selecting the selected token clears it.
 - `testPresentationRules` — result text size at 9, 10, 12, and 13 digits and at the 340 and 460 point widths, which keys use a dark label, the 25% and 78% gradient floors, the 48 point and 1.4 swipe rule, postfix numbers versus operator symbols, which tree row belongs to the highlighted branch, the base and angle captions, and the four About links.
 - `testModelThemeAndMessages` — `CalculatorModel` follows the engine for `2+2` and a base change, the theme is read back from `themeMode` and an unknown value falls back to Auto, and every error has its English and Hungarian sentence.
+- `testReviewCrashesAndOverflow` — `2^63` is shown as `9.22337203685e18` instead of crashing, `2^62` is still exact in hexadecimal, `10^10` in hexadecimal and switching `2^70` or a 20-digit decimal to another base report the overflow message and keep the base, and `9^99!` and `171!` are domain errors.
+- `testReviewScientificDisplayAndLongLiterals` — `170!` is `7.25741561531e306`, values from 1e15 up and below 1e−9 use scientific notation, `10^16` stays exact, scientific, 20-digit, and 17-digit hexadecimal literals parse, `10^20` continues with `+1`, `exp(−30)` is not 0, and sine and tangent of 180° are exactly 0.
+- `testReviewNegateAfterEqualsKeepsTree` — `+/−` after `9+7=` wraps the tree, the postfix, and the expression in a negation, a second `+/−` undoes it, the result continues, and the exact fraction survives a base change.
+- `testReviewLocalizationIsDeclared` — the bundle declares `en` and `hu`, and the overflow error has its English and Hungarian sentence.
 
 ### TreeCalcUITests
 
 - `testAdditionHelpAndAbout` — `2+2` shows 4, a Help topic opens, and About shows the original iOS link and the author.
 - `testBaseErrorAndExpressionTree` — `M+` shows the memory mark, decimal 10 becomes `A` in base 16, a horizontal drag opens the expression tree for `9+7×6`, Back returns to the keypad, and `1÷0` shows the division-by-zero message.
+- `testHungarianLanguageAndTreeButton` — launched in Hungarian, the keys read `És` and `Fok`, the tree button is labelled `Kifejezésfa`, opens the tree after `2+3=`, and Back returns.
 
 ## Architecture
 
@@ -86,10 +91,10 @@ keypad → CalculatorModel → CalculatorEngine
 tree screen → postfix playback
 ```
 
-- `TreeCalc/Engine` is pure Swift. Evaluation uses `Double`, integer bases, and 12-digit half-up decimal text.
+- `TreeCalc/Engine` is pure Swift. Evaluation uses `Double`, integer bases, and 12-digit half-up decimal text. From 1e15 up and below 1e−9 the decimal display switches to 12 significant digits in scientific notation, such as `1e20`.
 - A parallel fraction is kept only when the tree is rational: numbers, `+ − × ÷`, an integer power, sign, and parentheses. `classify` then chooses the display.
 - `TreeCalc/UI` is SwiftUI. `CalculatorModel` is `@Observable` and `@MainActor`.
-- English and Hungarian follow the device language. There is no in-app language picker. The decimal separator is always `.`.
+- English and Hungarian follow the device language. The bundle declares both in `CFBundleLocalizations` and in `en.lproj` and `hu.lproj`, otherwise iOS runs the app in English on a Hungarian device. `L10n` reads `Bundle.main.preferredLocalizations`. There is no in-app language picker. The decimal separator is always `.`.
 - Theme Auto, Light, and Dark is stored in `UserDefaults`. Auto follows the system.
 
 ## Behavior
@@ -98,7 +103,12 @@ tree screen → postfix playback
 - Repeating rationals that fit the display are written with the period in parentheses: `0.(3)`, `0.1(6)`, `0.08(3)`, `0.(142857)`. The non-repeating part plus the period must be at most 12 digits. A longer period or an irrational operation keeps the 12-digit string. The same parentheses are used in base 2, 8, and 16.
 - Every base has a radix point. One hexadecimal place is a sixteenth, so decimal `0.5` is hexadecimal `0.8`. Pressing 2, 8, 10, or 16 rewrites the number being typed, the current result, and the numbers already in the expression. `=` is not required first.
 - After `=`, the next operator continues from that exact fraction when one exists. Memory of those results stays exact too. Bitwise operations still use the `Double` value.
-- iPhone is portrait only. A horizontal drag longer than 48 pt and longer than 1.4 times the vertical movement switches between the calculator and the tree. iPad regular width and height show both at once, with no swipe.
+- A literal that does not fit an `Int64` fraction, such as a 20-digit number or a scientific result, is read as a `Double`, so a large result can be continued.
+- Bases 2, 8, and 16 hold whole parts below 2^63. A larger result, or a base switch that would need one, shows “The number is too large for this numerical system.” and keeps the current base.
+- `+/−` after `=` negates the result, the tree, the postfix, and the expression together.
+- A sine, cosine, or tangent within 1e−12 of zero is 0, so `sin 180°` is 0.
+- The result shrinks and wraps to fit the display. Touch and hold it to copy.
+- iPhone is portrait only. The tree button at the top left of the calculator opens the expression tree, and `<` returns. A horizontal drag longer than 48 pt and longer than 1.4 times the vertical movement also switches between the calculator and the tree.
 - Keys are glossy, following `buttonAddGradientEffect` in Calculator-ios. Corners are 8 pt. The border is 1.5 pt in hue 0.611, saturation 0.327, brightness 0.394. In light mode the fill runs from the key color at the top to 25% of that brightness at the bottom: the 2012 call `colorStartColorForGradientColor:percent:75 flavour:NO` subtracts 75% of the brightness. There is no extra inner stroke. The shadow is gray, offset 3 pt down and to the right, with a 3 pt blur, the same as the 2012 layer. Dark mode keeps a shallower shine, down to 78% brightness, because those fills already read as raised. Pressing darkens the key. Operator and equals labels are dark on the light gray keys so they stay readable.
 - Parentheses share the green function color. Bitwise keys and the base switcher are a separate blue group, because the 2012 app did not have them. The selected base has a stronger border.
 - Postfix playback walks the existing tokens and highlights the same branch as a tap. It does not evaluate again. With Reduce Motion, Play advances one step per tap. Otherwise each step waits 700 ms.
@@ -116,7 +126,7 @@ The 2012 Objective-C calculator is only a visual reference.
 
 The app asks for no permissions. `ITSAppUsesNonExemptEncryption` is false. `PrivacyInfo.xcprivacy` reports no tracking. `UserDefaults` is declared with reason `CA92.1` because the theme is stored there. There is no account, advertising, camera, location, or background mode. The iOS privacy policy is `https://lkovari.github.io/KLHome/assets/bigfiles/treecalc-ios-privacy-policy.html` (source: `docs/treecalc-ios-privacy-policy.html`). About also links the original desktop repository and the original iOS calculator page.
 
-Screenshots should be taken from this build on iPhone and iPad. The expression tree, the number bases, and postfix playback are the parts that are specific to TreeCalc.
+Screenshots should be taken from this build on iPhone. The PNGs in `docs/images/screenshots` are RGB without alpha. The launch screen picture is not uploaded, because App Review guideline 2.3.3 asks for the app in use. The expression tree, the number bases, and postfix playback are the parts that are specific to TreeCalc.
 
 ## License
 

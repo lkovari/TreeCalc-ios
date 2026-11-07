@@ -5,24 +5,12 @@ struct TreeCalcRoot: View {
     @State private var theme = ThemeStore()
     @State private var showTree = false
     @State private var path = NavigationPath()
-    @Environment(\.horizontalSizeClass) private var horizontal
-    @Environment(\.verticalSizeClass) private var vertical
     @Environment(\.colorScheme) private var scheme
-
-    private var split: Bool {
-        horizontal == .regular && vertical == .regular
-    }
 
     var body: some View {
         NavigationStack(path: $path) {
             VStack(spacing: 0) {
-                if split {
-                    HStack(spacing: 0) {
-                        CalculatorScreen(model: model)
-                        Divider()
-                        TreeScreen(state: model.state)
-                    }
-                } else if showTree {
+                if showTree {
                     TreeScreen(state: model.state)
                 } else {
                     CalculatorScreen(model: model)
@@ -34,11 +22,11 @@ struct TreeCalcRoot: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     TreeCalcMark(
-                        caption: showTree && !split ? L10n.text("Expression tree", "Kifejezésfa") : "",
+                        caption: showTree ? L10n.text("Expression tree", "Kifejezésfa") : "",
                         captionColor: screenInk(scheme)
                     )
                 }
-                if showTree && !split {
+                if showTree {
                     ToolbarItem(placement: .topBarLeading) {
                         Button {
                             showTree = false
@@ -48,6 +36,17 @@ struct TreeCalcRoot: View {
                         }
                         .accessibilityIdentifier("tree.back")
                         .accessibilityLabel(L10n.text("Back", "Vissza"))
+                    }
+                } else {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            showTree = true
+                        } label: {
+                            Image(systemName: "point.3.connected.trianglepath.dotted")
+                                .font(.body.weight(.semibold))
+                        }
+                        .accessibilityIdentifier("tree.open")
+                        .accessibilityLabel(L10n.text("Expression tree", "Kifejezésfa"))
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -66,7 +65,7 @@ struct TreeCalcRoot: View {
                     .accessibilityLabel(L10n.text("More options", "További lehetőségek"))
                 }
             }
-            .modifier(PhoneSwipe(enabled: !split, showTree: $showTree))
+            .modifier(PhoneSwipe(showTree: $showTree))
             .navigationDestination(for: String.self) { route in
                 if route == "help" {
                     HelpScreen()
@@ -97,20 +96,15 @@ func shouldSwitchTree(width: CGFloat, height: CGFloat) -> Bool {
 }
 
 struct PhoneSwipe: ViewModifier {
-    var enabled: Bool
     @Binding var showTree: Bool
 
     func body(content: Content) -> some View {
-        if enabled {
-            content.gesture(
-                DragGesture(minimumDistance: 48).onEnded { value in
-                    if shouldSwitchTree(width: value.translation.width, height: value.translation.height) {
-                        showTree.toggle()
-                    }
+        content.gesture(
+            DragGesture(minimumDistance: 48).onEnded { value in
+                if shouldSwitchTree(width: value.translation.width, height: value.translation.height) {
+                    showTree.toggle()
                 }
-            )
-        } else {
-            content
-        }
+            }
+        )
     }
 }

@@ -10,6 +10,7 @@ enum ErrorKind: Equatable {
     case invalidDigit
     case malformedExpression
     case invalidFactorial
+    case overflow
 }
 
 struct CalculatorException: Error, Equatable {

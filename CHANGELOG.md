@@ -77,3 +77,25 @@ First iOS build. SwiftUI calculator, version 1.0.0, author László Kővári.
 ### 2026-11-06 23:35
 
 - `docs/images/screenshots/iphone-6.9-splash.png` is the launch screen, framed at 1320×2868.
+
+### 2026-11-07
+
+- TreeCalc is iPhone only. `TARGETED_DEVICE_FAMILY` is 1, the iPad orientations and the iPad split layout are removed, and Help no longer mentions iPad. The App Store needs no iPad screenshots.
+
+### 2026-11-07, review fixes
+
+Fixes from `treecalc-review-hu.md`, items K1–K3, M1–M5, Kö4, and Kö5.
+
+- No crash at `2^63`. Whole numbers are converted with `Int64(exactly:)`, so a value at the edge of `Int64` falls back to text instead of trapping.
+- No crash for large numbers in bases 2, 8, and 16. Those bases hold whole parts below 2^63. A larger result, or a base switch that would need one, shows “The number is too large for this numerical system.” and keeps the current base. Memory recall reports the same error.
+- No crash for the factorial of a large number. The 170 limit is checked before the value becomes an `Int`.
+- Hungarian works on a Hungarian device. The bundle declares `en` and `hu` in `CFBundleLocalizations` and in `en.lproj` and `hu.lproj`, and `L10n` reads `Bundle.main.preferredLocalizations`. Before this, iOS ran the app in English everywhere.
+- Very large and very small decimal results use scientific notation with 12 significant digits from 1e15 up and below 1e−9. `170!` is `7.25741561531e306`, not `NaN`, and `exp(−30)` is `9.35762296884e-14`, not 0.
+- Sine, cosine, and tangent within 1e−12 of zero are 0, so `sin 180°` stays 0.
+- The result shrinks and wraps to fit the display instead of being cut off. Touch and hold it to copy.
+- A number that does not fit an `Int64` fraction is read as a `Double`. `10^20 = + 1 =` and a 20-digit number work.
+- `+/−` after `=` also negates the tree, the postfix, and the expression, so they match the result.
+- The calculator has a tree button at the top left. The swipe still works.
+- Help describes the tree button, copying, and scientific notation.
+- The App Store screenshots are flattened to RGB without alpha. `docs/store-presence.md` no longer suggests uploading the launch screen, and the description and review notes mention the tree button.
+- New tests: `testReviewCrashesAndOverflow`, `testReviewScientificDisplayAndLongLiterals`, `testReviewNegateAfterEqualsKeepsTree`, `testReviewLocalizationIsDeclared`, and the UI test `testHungarianLanguageAndTreeButton`.

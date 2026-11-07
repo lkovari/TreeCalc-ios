@@ -60,6 +60,27 @@ final class TreeCalcUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["about.author"].waitForExistence(timeout: 3))
     }
 
+    func testHungarianLanguageAndTreeButton() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(hu)", "-AppleLocale", "hu_HU"]
+        app.launch()
+        let and = app.buttons["key.and"]
+        XCTAssertTrue(and.waitForExistence(timeout: 5))
+        XCTAssertEqual(and.label, "És")
+        XCTAssertEqual(app.buttons["key.angleMode"].label, "Fok")
+        app.buttons["key.digit2"].tap()
+        app.buttons["key.add"].tap()
+        app.buttons["key.digit3"].tap()
+        app.buttons["key.equals"].tap()
+        let open = app.buttons["tree.open"]
+        XCTAssertTrue(open.waitForExistence(timeout: 3))
+        XCTAssertEqual(open.label, "Kifejezésfa")
+        open.tap()
+        XCTAssertTrue(app.buttons["postfix.0"].waitForExistence(timeout: 3))
+        app.buttons["tree.back"].tap()
+        XCTAssertTrue(app.buttons["tree.open"].waitForExistence(timeout: 3))
+    }
+
     func testBaseErrorAndExpressionTree() {
         let app = XCUIApplication()
         app.launch()

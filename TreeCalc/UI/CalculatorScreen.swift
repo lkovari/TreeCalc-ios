@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct KeySpec: Identifiable {
     var key: CalculatorKey
@@ -46,14 +47,23 @@ struct CalculatorScreen: View {
                 .font(.system(size: resultFontSize(length: model.state.display.count, width: width), weight: .medium, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(CalcColor.displayInk)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, minHeight: 52, alignment: .trailing)
+                .lineLimit(3)
+                .minimumScaleFactor(0.3)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: .infinity, minHeight: 52, maxHeight: 52, alignment: .trailing)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
                 .background(CalcColor.displayFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .strokeBorder(CalcColor.border, lineWidth: 1)
+                }
+                .contextMenu {
+                    Button {
+                        UIPasteboard.general.string = model.state.display
+                    } label: {
+                        Label(L10n.text("Copy", "Másolás"), systemImage: "doc.on.doc")
+                    }
                 }
                 .accessibilityIdentifier("display.result")
             expressionWell
@@ -295,6 +305,8 @@ func errorText(_ kind: ErrorKind?) -> String? {
         L10n.text("Factorial needs a non-negative whole number.", "A faktoriálishoz nemnegatív egész szám kell.")
     case .undefined:
         L10n.text("Undefined.", "Nem definiált.")
+    case .overflow:
+        L10n.text("The number is too large for this numerical system.", "A szám túl nagy ebben a számrendszerben.")
     case nil:
         nil
     }

@@ -855,6 +855,111 @@ final class EdgeCaseTests: XCTestCase {
         expect(.undefined, "Undefined.", "Nem definiált.")
     }
 
+    func testReviewCrashesAndOverflow() throws {
+        XCTAssertEqual(show("2^63"), "9.22337203685e18")
+        XCTAssertEqual(try NumericText.format(pow(2, 62), base: .hexadecimal), "4000000000000000")
+        assertKind(.overflow) { _ = try NumericText.format(pow(2, 63), base: .hexadecimal) }
+        assertKind(.overflow) { _ = try NumericText.format(-pow(2, 64), base: .binary) }
+        let hex = fresh()
+        hex.setBase(.hexadecimal)
+        pressAll(hex, "10^10")
+        hex.press(.equals)
+        XCTAssertEqual(hex.snapshot().errorKind, .overflow)
+        XCTAssertNil(hex.snapshot().tree)
+        let switched = fresh()
+        pressAll(switched, "2^70")
+        switched.press(.equals)
+        switched.setBase(.hexadecimal)
+        XCTAssertEqual(switched.snapshot().errorKind, .overflow)
+        XCTAssertEqual(switched.snapshot().base, .decimal)
+        XCTAssertEqual(switched.snapshot().display, "1.18059162072e21")
+        let typed = fresh()
+        pressAll(typed, "99999999999999999999")
+        typed.setBase(.binary)
+        XCTAssertEqual(typed.snapshot().errorKind, .overflow)
+        XCTAssertEqual(typed.snapshot().base, .decimal)
+        assertKind(.domain) { _ = try Operations.executeUnary(pow(9, 99), .fact) }
+        assertKind(.domain) { _ = try Operations.executeUnary(171, .fact) }
+        let factorial = evaluated { engine in
+            pressAll(engine, "9^99")
+            engine.press(.fact)
+        }
+        XCTAssertEqual(factorial.errorKind, .domain)
+    }
+
+    func testReviewScientificDisplayAndLongLiterals() throws {
+        let big = evaluated { engine in
+            pressAll(engine, "170")
+            engine.press(.fact)
+        }
+        XCTAssertNil(big.errorKind)
+        XCTAssertEqual(big.display, "7.25741561531e306")
+        XCTAssertEqual(try NumericText.format(1e20, base: .decimal), "1e20")
+        XCTAssertEqual(try NumericText.format(-1.5e15, base: .decimal), "-1.5e15")
+        XCTAssertEqual(try NumericText.format(999_999_999_999_999, base: .decimal), "999999999999999")
+        XCTAssertEqual(try NumericText.format(Foundation.exp(-30), base: .decimal), "9.35762296884e-14")
+        XCTAssertEqual(try NumericText.format(1e-9, base: .decimal), "0.000000001")
+        XCTAssertEqual(try NumericText.parse("1e20", base: .decimal), 1e20)
+        XCTAssertEqual(try NumericText.parse("-9.35762296884e-14", base: .decimal), -9.35762296884e-14)
+        XCTAssertEqual(try NumericText.parse("99999999999999999999", base: .decimal), 1e20, accuracy: 1e5)
+        XCTAssertEqual(try NumericText.parse("FFFFFFFFFFFFFFFFF", base: .hexadecimal), pow(16, 17) - 1, accuracy: 1e5)
+        XCTAssertEqual(try NumericText.parse("0.12345678901234567890", base: .decimal), 0.12345678901234567890, accuracy: 1e-15)
+        XCTAssertEqual(try NumericText.parse("1E20", base: .hexadecimal), 0x1E20)
+        assertKind(.malformedExpression) { _ = try NumericText.parse("1.2.3", base: .decimal) }
+        let continued = fresh()
+        pressAll(continued, "10^20")
+        continued.press(.equals)
+        XCTAssertEqual(continued.snapshot().display, "1e20")
+        pressAll(continued, "+1")
+        continued.press(.equals)
+        XCTAssertNil(continued.snapshot().errorKind)
+        XCTAssertEqual(continued.snapshot().display, "1e20")
+        XCTAssertEqual(show("99999999999999999999+1"), "1e20")
+        XCTAssertEqual(show("10^16"), "10000000000000000")
+        let small = evaluated { engine in
+            pressAll(engine, "30")
+            engine.press(.negate)
+            engine.press(.exp)
+        }
+        XCTAssertEqual(small.display, "9.35762296884e-14")
+        try assertNear("180", .sin, 0, "0")
+        try assertNear("180", .tan, 0, "0")
+    }
+
+    func testReviewNegateAfterEqualsKeepsTree() throws {
+        let engine = fresh()
+        pressAll(engine, "9+7")
+        engine.press(.equals)
+        engine.press(.negate)
+        let state = engine.snapshot()
+        XCTAssertEqual(state.display, "-16")
+        XCTAssertEqual(state.expression, "− ( 9 + 7 )")
+        XCTAssertEqual(state.postfixTokens, ["9", "7", "+", "−"])
+        XCTAssertEqual(try XCTUnwrap(state.tree).evaluate(), -16)
+        XCTAssertEqual(state.tree?.operatorKind, .neg)
+        engine.press(.negate)
+        XCTAssertEqual(engine.snapshot().display, "16")
+        XCTAssertEqual(try XCTUnwrap(engine.snapshot().tree).evaluate(), 16)
+        pressAll(engine, "+1")
+        engine.press(.equals)
+        XCTAssertEqual(engine.snapshot().display, "17")
+        let third = fresh()
+        pressAll(third, "1/3")
+        third.press(.equals)
+        third.press(.negate)
+        XCTAssertEqual(third.snapshot().display, "-0.(3)")
+        third.setBase(.hexadecimal)
+        XCTAssertEqual(third.snapshot().expression, "− ( 1 ÷ 3 )")
+        XCTAssertEqual(third.snapshot().display, "-0.(5)")
+    }
+
+    func testReviewLocalizationIsDeclared() throws {
+        let declared = Bundle.main.object(forInfoDictionaryKey: "CFBundleLocalizations") as? [String]
+        XCTAssertEqual(declared, ["en", "hu"])
+        XCTAssertTrue(Bundle.main.localizations.contains("hu"))
+        expect(.overflow, "The number is too large for this numerical system.", "A szám túl nagy ebben a számrendszerben.")
+    }
+
     private func operatorIsKnown(_ kind: OperatorKind) -> Bool {
         switch kind {
         case .add, .sub, .mul, .div, .mod, .pow, .and, .or, .xor, .lsh, .not, .neg, .sqrt, .rec, .sin, .cos, .tan, .ln, .log, .exp, .sq, .cube, .fact:

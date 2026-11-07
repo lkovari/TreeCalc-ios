@@ -38,6 +38,10 @@ final class CalculatorEngine {
 
     func setBase(_ newBase: NumericBase) {
         if newBase == base { return }
+        if !valuesFit(newBase) {
+            errorKind = .overflow
+            return
+        }
         let previous = base
         base = newBase
         infix = infix.map { convertToken($0, from: previous, to: newBase) }
@@ -154,6 +158,9 @@ final class CalculatorEngine {
             let postfix = try InfixToPostfix.convert(infix)
             let tree = try ExpressionTreeBuilder.build(postfix, base: base)
             let value = try tree.evaluate(angleMode: angleMode)
+            if !NumericText.fits(value, base: base) {
+                throw CalculatorException(kind: .overflow)
+            }
             let fraction = tree.exactFraction(base: base)
             if let fraction {
                 lastResult = Double(fraction.num) / Double(fraction.den)
@@ -286,6 +293,12 @@ final class CalculatorEngine {
                 if let fraction = lastFraction {
                     lastFraction = fraction.negated()
                 }
+                if let tree = lastTree {
+                    lastTree = .unary(.neg, tree)
+                    lastPostfix.append(.operatorToken(.neg))
+                    savedInfix = [.operatorToken(.neg), .leftParen] + savedInfix + [.rightParen]
+                    lastExpressionText = formatExpression(savedInfix, "")
+                }
                 liveDisplay = displayText(lastResult ?? result, fraction: lastFraction)
                 currentInput = ""
                 infix.removeAll()
@@ -341,8 +354,11 @@ final class CalculatorEngine {
         let formatted: String
         if let memoryFraction, let exact = DecimalDisplay.format(memoryFraction, base: base) {
             formatted = exact
+        } else if let text = try? NumericText.format(memory, base: base) {
+            formatted = text
         } else {
-            formatted = (try? NumericText.format(memory, base: base)) ?? "0"
+            errorKind = .overflow
+            return
         }
         currentInput = formatted
         liveDisplay = formatted
@@ -447,16 +463,37 @@ final class CalculatorEngine {
         if core.isEmpty || core == "-" {
             return raw
         }
-        guard let fraction = Fraction.fromLiteral(core, radix: from.radix) else {
+        let pretty: String
+        if let fraction = Fraction.fromLiteral(core, radix: from.radix) {
+            pretty = DecimalDisplay.format(fraction, base: to)
+                ?? (try? NumericText.format(Double(fraction.num) / Double(fraction.den), base: to))
+                ?? raw
+        } else if let value = try? NumericText.parse(core, base: from), let text = try? NumericText.format(value, base: to) {
+            pretty = text
+        } else {
             return raw
         }
-        let pretty = DecimalDisplay.format(fraction, base: to)
-            ?? (try? NumericText.format(Double(fraction.num) / Double(fraction.den), base: to))
-            ?? raw
         if trailingDot && !pretty.contains(".") && !pretty.contains("(") {
             return pretty + "."
         }
         return pretty
+    }
+
+    private func valuesFit(_ target: NumericBase) -> Bool {
+        var literals = (infix + savedInfix).compactMap { token -> String? in
+            if case .numberLiteral(let raw) = token { return raw }
+            return nil
+        }
+        literals.append(currentInput)
+        for raw in literals {
+            if let value = try? NumericText.parse(raw, base: base), !NumericText.fits(value, base: target) {
+                return false
+            }
+        }
+        if afterEquals, let result = lastResult, !NumericText.fits(result, base: target) {
+            return false
+        }
+        return true
     }
 
     private func currentNumericValue() -> Double? {

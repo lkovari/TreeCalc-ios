@@ -181,7 +181,7 @@ enum DecimalDisplay {
         if let fraction, let pretty = format(fraction, base: base) {
             return pretty
         }
-        return (try? NumericText.format(value, base: base)) ?? "0"
+        return (try? NumericText.format(value, base: base)) ?? "—"
     }
 
     private static func digits(_ fraction: Fraction, base: Int, preperiod: Int, period: Int, repeating: Bool) -> String? {

@@ -64,11 +64,11 @@ enum Operations {
             }
             return 1 / operand
         case .sin:
-            return Foundation.sin(toRadians(operand, angleMode))
+            return snapped(Foundation.sin(toRadians(operand, angleMode)))
         case .cos:
-            return Foundation.cos(toRadians(operand, angleMode))
+            return snapped(Foundation.cos(toRadians(operand, angleMode)))
         case .tan:
-            return try finite(Foundation.tan(toRadians(operand, angleMode)))
+            return snapped(try finite(Foundation.tan(toRadians(operand, angleMode))))
         case .ln:
             if operand <= 0 {
                 throw CalculatorException(kind: .domain)
@@ -99,6 +99,10 @@ enum Operations {
         return operand
     }
 
+    private static func snapped(_ value: Double) -> Double {
+        abs(value) < 1e-12 ? 0 : value
+    }
+
     private static func finite(_ value: Double) throws -> Double {
         if value.isNaN || value.isInfinite {
             throw CalculatorException(kind: .domain)
@@ -120,10 +124,10 @@ enum Operations {
         if value < 0 || !NumericText.isWhole(value) {
             throw CalculatorException(kind: .invalidFactorial)
         }
-        let n = Int(value.rounded())
-        if n > 170 {
+        if value > 170 {
             throw CalculatorException(kind: .domain)
         }
+        let n = Int(value.rounded())
         var result = 1.0
         if n >= 2 {
             for i in 2...n {

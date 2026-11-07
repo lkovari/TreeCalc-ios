@@ -57,8 +57,8 @@ struct HelpScreen: View {
                 id: "swipe",
                 title: L10n.text("Switching screens", "Képernyők váltása"),
                 body: L10n.text(
-                    "The calculator and the expression tree live side by side. On iPhone, swipe left or swipe right to show the other. The expression tree also has a back button, the same < mark as Help and About, because scrolling the tree can take the swipe. On iPad both stay on screen together.",
-                    "A számológép és a kifejezésfa egymás mellett él. iPhone-on balra vagy jobbra húzva a másik jelenik meg. A kifejezésfán van vissza gomb is, ugyanaz a < jel, mint a Súgóban és a Névjegyben, mert a fa görgetése elviheti a húzást. iPaden a kettő egyszerre látszik."
+                    "The calculator and the expression tree live side by side. The tree button at the top left of the calculator opens the expression tree, and the < button on the tree returns. Swiping left or right also switches between them, but scrolling the tree can take the swipe.\n\nTouch and hold the result to copy it. Very large and very small results use scientific notation, for example 1e20.",
+                    "A számológép és a kifejezésfa egymás mellett él. A számológép bal felső fa gombja megnyitja a kifejezésfát, a fán a < gomb visszavisz. Balra vagy jobbra húzva is lehet váltani, de a fa görgetése elviheti a húzást.\n\nAz eredményt hosszan nyomva kimásolhatod. A nagyon nagy és nagyon kicsi eredmény tudományos alakban jelenik meg, például 1e20."
                 )
             ),
             HelpTopic(

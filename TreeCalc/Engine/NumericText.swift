@@ -2,6 +2,9 @@ import Foundation
 
 enum NumericText {
     static let piSymbol = "π"
+    static let scientificUpper = 1e15
+    static let scientificLower = 1e-9
+    private static let int64Limit = 0x1p63
 
     static func parse(_ raw: String, base: NumericBase) throws -> Double {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -11,10 +14,13 @@ enum NumericText {
         if trimmed.isEmpty || trimmed == "-" || trimmed == "." || trimmed == "-." {
             throw CalculatorException(kind: .malformedExpression)
         }
-        guard let fraction = Fraction.fromLiteral(trimmed, radix: base.radix) else {
+        if let fraction = Fraction.fromLiteral(trimmed, radix: base.radix) {
+            return Double(fraction.num) / Double(fraction.den)
+        }
+        guard let value = approximateLiteral(trimmed, base: base), value.isFinite else {
             throw CalculatorException(kind: .malformedExpression)
         }
-        return Double(fraction.num) / Double(fraction.den)
+        return value
     }
 
     static func format(_ value: Double, base: NumericBase) throws -> String {
@@ -22,15 +28,63 @@ enum NumericText {
             throw CalculatorException(kind: .domain)
         }
         if base == .decimal {
-            if isWhole(value), abs(value) <= Double(Int64.max) {
-                return String(Int64(value.rounded()))
+            let magnitude = abs(value)
+            if magnitude >= scientificUpper || (magnitude > 0 && magnitude < scientificLower) {
+                return scientific(value)
+            }
+            if isWhole(value), let whole = Int64(exactly: value.rounded()) {
+                return String(whole)
             }
             return plainScale12(value)
         }
-        if isWhole(value), abs(value) <= Double(Int64.max) {
-            return String(Int64(value.rounded()), radix: base.radix).uppercased()
+        if !fits(value, base: base) {
+            throw CalculatorException(kind: .overflow)
+        }
+        if isWhole(value), let whole = Int64(exactly: value.rounded()) {
+            return String(whole, radix: base.radix).uppercased()
         }
         return approximate(value, base: base)
+    }
+
+    static func fits(_ value: Double, base: NumericBase) -> Bool {
+        base == .decimal || abs(value) < int64Limit
+    }
+
+    private static func scientific(_ value: Double) -> String {
+        let text = String(format: "%.11e", locale: Locale(identifier: "en_US_POSIX"), value).lowercased()
+        let parts = text.split(separator: "e")
+        guard parts.count == 2, let exponent = Int(parts[1]) else { return text }
+        var mantissa = String(parts[0])
+        if mantissa.contains(".") {
+            while mantissa.last == "0" { mantissa.removeLast() }
+            if mantissa.last == "." { mantissa.removeLast() }
+        }
+        return "\(mantissa)e\(exponent)"
+    }
+
+    private static func approximateLiteral(_ text: String, base: NumericBase) -> Double? {
+        if base == .decimal && text.lowercased().contains("e") {
+            return Double(text.lowercased())
+        }
+        let negative = text.hasPrefix("-")
+        let body = negative ? text.dropFirst() : Substring(text)
+        let parts = body.split(separator: ".", omittingEmptySubsequences: false)
+        if parts.count > 2 || body.isEmpty { return nil }
+        let radix = Double(base.radix)
+        var value = 0.0
+        for character in parts[0] {
+            guard let digit = character.hexDigitValue, digit < base.radix else { return nil }
+            value = value * radix + Double(digit)
+        }
+        if parts.count == 2 {
+            var scale = 1.0
+            for character in parts[1] {
+                guard let digit = character.hexDigitValue, digit < base.radix else { return nil }
+                scale /= radix
+                value += Double(digit) * scale
+            }
+        }
+        return negative ? -value : value
     }
 
     private static func approximate(_ value: Double, base: NumericBase) -> String {
