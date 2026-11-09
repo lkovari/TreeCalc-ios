@@ -190,4 +190,5 @@ struct EvaluationResult: Equatable {
     var memorySet: Bool
     var afterEquals: Bool
     var angleMode: AngleMode
+    var expressionSpans: [ClosedRange<Int>] = []
 }

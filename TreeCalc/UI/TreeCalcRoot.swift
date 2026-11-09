@@ -4,6 +4,7 @@ struct TreeCalcRoot: View {
     @State private var model = CalculatorModel()
     @State private var theme = ThemeStore()
     @State private var showTree = false
+    @State private var walk = TreeWalk()
     @State private var path = NavigationPath()
     @Environment(\.colorScheme) private var scheme
 
@@ -11,7 +12,12 @@ struct TreeCalcRoot: View {
         NavigationStack(path: $path) {
             VStack(spacing: 0) {
                 if showTree {
-                    TreeScreen(state: model.state)
+                    TreeScreen(
+                        state: model.state,
+                        playback: $walk.playback,
+                        userStep: $walk.userStep,
+                        collapsed: $walk.collapsed
+                    )
                 } else {
                     CalculatorScreen(model: model)
                 }
@@ -73,6 +79,10 @@ struct TreeCalcRoot: View {
                     AboutScreen()
                 }
             }
+        }
+        .onChange(of: model.state.postfix) { _, _ in
+            walk.playback = PostfixPlayback()
+            walk.collapsed = []
         }
         .preferredColorScheme(theme.preferredScheme)
         .tint(CalcColor.title)

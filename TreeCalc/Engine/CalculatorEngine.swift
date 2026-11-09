@@ -22,17 +22,19 @@ final class CalculatorEngine {
 
     func snapshot() -> EvaluationResult {
         let expression = afterEquals ? lastExpressionText : formatExpression(infix, currentInput)
+        let tokens = lastTree == nil ? [] : lastPostfix.map(tokenText)
         return EvaluationResult(
             display: liveDisplay,
             expression: expression,
             postfix: formatPostfix(lastPostfix),
-            postfixTokens: lastTree == nil ? [] : lastPostfix.map(tokenText),
+            postfixTokens: tokens,
             tree: lastTree,
             base: base,
             errorKind: errorKind,
             memorySet: memorySet,
             afterEquals: afterEquals,
-            angleMode: angleMode
+            angleMode: angleMode,
+            expressionSpans: publishedSpans(tokenCount: tokens.count)
         )
     }
 
@@ -558,6 +560,15 @@ final class CalculatorEngine {
         case .fact: .fact
         default: .add
         }
+    }
+
+    private func publishedSpans(tokenCount: Int) -> [ClosedRange<Int>] {
+        guard afterEquals, lastTree != nil, tokenCount > 0 else { return [] }
+        let spans = expressionStepSpans(savedInfix)
+        if spans.count != tokenCount {
+            return []
+        }
+        return spans
     }
 
     private func displayText(_ value: Double, fraction: Fraction?) -> String {

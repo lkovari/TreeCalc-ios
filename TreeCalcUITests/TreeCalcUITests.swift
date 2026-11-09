@@ -19,15 +19,15 @@ final class TreeCalcUITests: XCTestCase {
         } else {
             helpHu.tap()
         }
-        let topic = app.buttons["topic.Postfix playback"]
-        let topicHu = app.buttons["topic.Postfix lejátszás"]
+        let topic = app.buttons["topic.Expression tree playback"]
+        let topicHu = app.buttons["topic.Kifejezésfa lejátszás"]
         if topic.waitForExistence(timeout: 3) {
             topic.tap()
         } else {
             topicHu.tap()
         }
-        let opened = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Reduce Motion")).firstMatch
-        let openedHu = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Mozgás csökkentése")).firstMatch
+        let opened = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Step by step")).firstMatch
+        let openedHu = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Lépésenként")).firstMatch
         XCTAssertTrue(opened.waitForExistence(timeout: 3) || openedHu.exists)
         app.navigationBars.buttons.element(boundBy: 0).tap()
         app.buttons["mainMenu"].tap()
@@ -118,5 +118,38 @@ final class TreeCalcUITests: XCTestCase {
         let error = app.descendants(matching: .any)["display.error"]
         XCTAssertTrue(error.waitForExistence(timeout: 3))
         XCTAssertTrue(error.label.contains("Division by zero") || error.label.contains("Nullával osztás"))
+    }
+
+    func testStepByStepPlayback() {
+        let app = XCUIApplication()
+        app.launch()
+        app.buttons["key.digit9"].tap()
+        app.buttons["key.add"].tap()
+        app.buttons["key.digit7"].tap()
+        app.buttons["key.mul"].tap()
+        app.buttons["key.digit6"].tap()
+        app.buttons["key.equals"].tap()
+        let open = app.buttons["tree.open"]
+        XCTAssertTrue(open.waitForExistence(timeout: 3))
+        open.tap()
+        let play = app.buttons["tree.playback"]
+        XCTAssertTrue(play.waitForExistence(timeout: 3))
+        XCTAssertTrue(play.label == "Play" || play.label == "Lejátszás")
+        let step = app.switches["tree.step"]
+        XCTAssertTrue(step.waitForExistence(timeout: 3))
+        step.tap()
+        play.tap()
+        XCTAssertTrue(play.label == "Next" || play.label == "Következő")
+        XCTAssertTrue(app.buttons["tree.playback.stop"].exists)
+        XCTAssertTrue(app.buttons["postfix.0"].isSelected)
+        XCTAssertTrue(app.buttons["operation.0"].exists)
+        play.tap()
+        XCTAssertTrue(app.buttons["postfix.1"].isSelected)
+        app.buttons["postfix.3"].tap()
+        XCTAssertTrue(app.buttons["postfix.3"].isSelected)
+        app.buttons["postfix.3"].tap()
+        XCTAssertFalse(app.buttons["postfix.3"].isSelected)
+        XCTAssertTrue(play.label == "Play" || play.label == "Lejátszás")
+        XCTAssertFalse(app.buttons["tree.playback.stop"].exists)
     }
 }
